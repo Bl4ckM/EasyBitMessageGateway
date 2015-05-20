@@ -35,5 +35,9 @@ import lombok.Setter;
 public class Inbox {
     @Getter
     @Setter
-    List<Message> inboxMessages = new ArrayList<>();
+    private List<Message> inboxMessages;
+
+    public Inbox() {
+        inboxMessages = new ArrayList<>();
+    }
 }

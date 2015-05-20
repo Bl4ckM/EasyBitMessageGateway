@@ -23,11 +23,55 @@
  */
 package com.bl4ckbird.ebitm.pop;
 
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  *
  * @author Lukas Kaupp 'Bl4ckM' <lukas.kaupp@stud.h-da.de>
  */
-public class POP3Server extends Server{
+public class POP3Server extends Thread{
+    private int PORT;
+    private ServerSocket server;
+    private ArrayList<POP3ClientThread> clients;
     
-     
+    public POP3Server(){
+        if(this instanceof POP3Server){
+            this.PORT = 110;
+        }
+        clients = new ArrayList<>();
+        try {
+            server = new ServerSocket(this.PORT);
+        } catch (IOException ex) {
+            Logger.getLogger(POP3Server.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    @Override
+    public void run(){
+        while(true){
+            try {
+                
+                
+                Socket clientcon = server.accept();
+                POP3ClientThread client = null;
+                
+                if(this instanceof POP3Server){
+                    client = new POP3Client(clientcon);
+                }
+              
+                Thread t = new Thread(client);
+                t.start();
+             
+                
+                
+            } catch (IOException ex) {
+                break;
+            }
+        }
+    }
+    
 }

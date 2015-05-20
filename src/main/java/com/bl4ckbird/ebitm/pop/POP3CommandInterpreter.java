@@ -120,7 +120,7 @@ public class POP3CommandInterpreter{
 
 		try {
 			Command cmd = Command.valueOf(command);
-			Response response = processCommand(cmd, argument);
+			POP3Response response = processCommand(cmd, argument);
 
 			if (!cmd.equals(Command.STAT) && !cmd.equals(Command.LIST)
 					&& !cmd.equals(Command.UIDL)) {
@@ -130,12 +130,12 @@ public class POP3CommandInterpreter{
 			return response.buildOutput();
 
 		} catch (IllegalArgumentException iae) {
-			return new Response(Response.Type.ERR, "unsupported command")
+			return new POP3Response(POP3Response.Type.ERR, "unsupported command")
 					.buildOutput();
 		}
 	}
 
-	private Response processCommand(Command command, String argument) {
+	private POP3Response processCommand(Command command, String argument) {
 		final boolean hasArguments = argument.length() > 0;
 		final String[] args = hasArguments ? argument.split(" ")
 				: new String[0];
@@ -144,33 +144,33 @@ public class POP3CommandInterpreter{
 
 		case USER:
 			if (!inState(State.AUTHORIZATION)) {
-				return new Response(Response.Type.ERR,
+				return new POP3Response(POP3Response.Type.ERR,
 						"command can only be used during "
 								+ State.AUTHORIZATION);
 			}
 			if (!hasArguments) {
-				return new Response(Response.Type.ERR,
+				return new POP3Response(POP3Response.Type.ERR,
 						"a mailbox wasn't specified");
 			}
 			/*if (!database.isUserRegistered(argument)) {
 				return new Response(Response.Type.ERR,
 						"a mailbox wasn't found for " + argument);
 			}*/
-			return new Response(Response.Type.OK, "welcome "
+			return new POP3Response(POP3Response.Type.OK, "welcome "
 					+ (username = argument));
 
 		case PASS:
 			if (!inState(State.AUTHORIZATION)) {
-				return new Response(Response.Type.ERR,
+				return new POP3Response(POP3Response.Type.ERR,
 						"command can only be used during "
 								+ State.AUTHORIZATION);
 			}
 			if (username == null) {
-				return new Response(Response.Type.ERR,
+				return new POP3Response(POP3Response.Type.ERR,
 						"a mailbox should be specifed before providing password");
 			}
 			if (!hasArguments) {
-				return new Response(Response.Type.ERR,
+				return new POP3Response(POP3Response.Type.ERR,
 						"a password wasn't provided");
 			}/*
 			if (!database.isUserValid(username, argument)) {
@@ -193,38 +193,36 @@ public class POP3CommandInterpreter{
 			enterState(State.TRANSACTION);
 			int passMsgCount = client.getAllMessages().size();
 			int passOctCount = 0;
-                        for(com.bl4ckbird.ebitm.bitmessage.entities.Message m : client.getAllMessages()){
-                            passOctCount += m.getMessage().length();
-                        };
-			return new Response(Response.Type.OK, username + "'s maildrop has "
+
+                        passOctCount = client.getAllMessages().stream().map((m) -> m.getMessage().length()).reduce(passOctCount, Integer::sum);
+			return new POP3Response(POP3Response.Type.OK, username + "'s maildrop has "
 					+ passMsgCount + " messages (" + passOctCount + " octets)");
 
 		case NOOP:
-			return new Response(Response.Type.OK);
+			return new POP3Response(POP3Response.Type.OK);
 
 		case STAT:
 			if (!inState(State.TRANSACTION)) {
-				return new Response(Response.Type.ERR,
+				return new POP3Response(POP3Response.Type.ERR,
 						"command can only be used during " + State.TRANSACTION);
 			}
 			int count = client.getAllMessages().size();
 			int octets = 0;
-                         for(com.bl4ckbird.ebitm.bitmessage.entities.Message m : client.getAllMessages()){
-                            octets += m.getMessage().length();
-                        };
-			return new Response(Response.Type.OK, count + " " + octets);
+
+                        octets = client.getAllMessages().stream().map((m) -> m.getMessage().length()).reduce(octets, Integer::sum);
+			return new POP3Response(POP3Response.Type.OK, count + " " + octets);
 
 		case LIST:
 			if (!inState(State.TRANSACTION)) {
-				return new Response(Response.Type.ERR,
+				return new POP3Response(POP3Response.Type.ERR,
 						"command can only be used during " + State.TRANSACTION);
 			}
 
 			List<com.bl4ckbird.ebitm.bitmessage.entities.Message> savedMessages5 = client.getAllMessages();
-                         ArrayList<Message> savedMessages = new ArrayList<>();
+                         ArrayList<POP3Message> savedMessages = new ArrayList<>();
                         for(int i = 0; i<savedMessages5.size(); i++){
                            com.bl4ckbird.ebitm.bitmessage.entities.Message m = savedMessages5.get(i);
-                           Message newm = new Message(i + "",m.getFromAddress(),m.getToAddress(),m.getSubject(),m.getMessage(),false);
+                           POP3Message newm = new POP3Message(i + "",m.getFromAddress(),m.getToAddress(),m.getSubject(),m.getMessage(),false);
                            savedMessages.add(newm);
                            
                            
@@ -233,14 +231,13 @@ public class POP3CommandInterpreter{
 			if (!hasArguments) {
 				int count0 = client.getAllMessages().size();
 				int octets0 = 0;
-                                for(com.bl4ckbird.ebitm.bitmessage.entities.Message m : client.getAllMessages()){
-                                    octets0 += m.getMessage().length();
-                                };
+                                octets0 = client.getAllMessages().stream().map((m) -> m.getMessage().length()).reduce(octets0, Integer::sum);
 
-				Response listResponse = new Response(Response.Type.OK, count0
+
+				POP3Response listResponse = new POP3Response(POP3Response.Type.OK, count0
 						+ " messages (" + octets0 + " octets)");
 				int msgIndex = 0;
-				for (Message m : savedMessages) {
+				for (POP3Message m : savedMessages) {
 					msgIndex++;
 					if (!m.isDeleted()) {
 						listResponse.appendExtraLine(msgIndex + " "
@@ -254,43 +251,43 @@ public class POP3CommandInterpreter{
 			try {
 				requestedMsg = Integer.parseInt(args[0]);
 			} catch (NumberFormatException nfe) {
-				return new Response(Response.Type.ERR, "number format error");
+				return new POP3Response(POP3Response.Type.ERR, "number format error");
 			}
-			Message selectedMessage = null;
+			POP3Message selectedMessage = null;
 			if (requestedMsg > savedMessages.size() || requestedMsg < 0) {
-				return new Response(Response.Type.ERR,
+				return new POP3Response(POP3Response.Type.ERR,
 						"no such message, your maildrop contains "
 								+ savedMessages.size() + " messages");
 			}
 			selectedMessage = savedMessages.get(requestedMsg - 1);
 			if (selectedMessage == null || selectedMessage.isDeleted()) {
-				return new Response(Response.Type.ERR,
+				return new POP3Response(POP3Response.Type.ERR,
 						"no such message, your maildrop contains "
 								+ savedMessages.size() + " messages");
 			}
-			return new Response(Response.Type.OK, requestedMsg + " "
+			return new POP3Response(POP3Response.Type.OK, requestedMsg + " "
 					+ selectedMessage.getOctetWeight());
 
 		case UIDL:
 			if (!inState(State.TRANSACTION)) {
-				return new Response(Response.Type.ERR,
+				return new POP3Response(POP3Response.Type.ERR,
 						"command can only be used during " + State.TRANSACTION);
 			}
 
 			List<com.bl4ckbird.ebitm.bitmessage.entities.Message> savedMessages2 = client.getAllMessages();
-                         ArrayList<Message> savedMessages1 = new ArrayList<>();
+                         ArrayList<POP3Message> savedMessages1 = new ArrayList<>();
                         for(int i = 0; i<savedMessages2.size(); i++){
                            com.bl4ckbird.ebitm.bitmessage.entities.Message m = savedMessages2.get(i);
-                           Message newm = new Message(i + "",m.getFromAddress(),m.getToAddress(),m.getSubject(),m.getMessage(),false);
+                           POP3Message newm = new POP3Message(i + "",m.getFromAddress(),m.getToAddress(),m.getSubject(),m.getMessage(),false);
                            savedMessages1.add(newm);
                            
                            
                         }
 
 			if (!hasArguments) {
-				Response response = new Response(Response.Type.OK);
+				POP3Response response = new POP3Response(POP3Response.Type.OK);
 				int msgIndex = 0;
-				for (Message m : savedMessages1) {
+				for (POP3Message m : savedMessages1) {
 					msgIndex++;
 					if (!m.isDeleted()) {
 						response.appendExtraLine(msgIndex + " "
@@ -304,39 +301,39 @@ public class POP3CommandInterpreter{
 			try {
 				requestedMsg1 = Integer.parseInt(args[0]);
 			} catch (NumberFormatException nfe) {
-				return new Response(Response.Type.ERR, "number format error");
+				return new POP3Response(POP3Response.Type.ERR, "number format error");
 			}
-			Message selectedMessage1 = null;
+			POP3Message selectedMessage1 = null;
 			if (requestedMsg1 > savedMessages1.size() || requestedMsg1 < 0) {
-				return new Response(Response.Type.ERR,
+				return new POP3Response(POP3Response.Type.ERR,
 						"no such message, your maildrop contains "
 								+ savedMessages1.size() + " messages");
 			}
 			selectedMessage1 = savedMessages1.get(requestedMsg1 - 1);
 			if (selectedMessage1 == null || selectedMessage1.isDeleted()) {
-				return new Response(Response.Type.ERR,
+				return new POP3Response(POP3Response.Type.ERR,
 						"no such message, your maildrop contains "
 								+ savedMessages1.size() + " messages");
 			}
-			return new Response(Response.Type.OK, requestedMsg1 + " "
+			return new POP3Response(POP3Response.Type.OK, requestedMsg1 + " "
 					+ selectedMessage1.getUniqueId());
 
 		case RETR:
 			if (!inState(State.TRANSACTION)) {
-				return new Response(Response.Type.ERR,
+				return new POP3Response(POP3Response.Type.ERR,
 						"command can only be used during " + State.TRANSACTION);
 			}
 			if (!hasArguments) {
-				return new Response(Response.Type.ERR,
+				return new POP3Response(POP3Response.Type.ERR,
 						"a message was not specified");
 			}
-			Message selectedMessage0 = getMessageSelection(args[0]);
+			POP3Message selectedMessage0 = getMessageSelection(args[0]);
 			if (selectedMessage0 == null || selectedMessage0.isDeleted()) {
-				return new Response(Response.Type.ERR, "no such message");
+				return new POP3Response(POP3Response.Type.ERR, "no such message");
 			}
 			String messageContent = selectedMessage0.getOctetString();
 			int retrMessageWeight = selectedMessage0.getOctetWeight();
-			Response retrResponse = new Response(Response.Type.OK);
+			POP3Response retrResponse = new POP3Response(POP3Response.Type.OK);
 
 			retrResponse.setResponse("message follows (" + retrMessageWeight
 					+ " octets)");
@@ -345,49 +342,49 @@ public class POP3CommandInterpreter{
 
 		case DELE:
 			if (!inState(State.TRANSACTION)) {
-				return new Response(Response.Type.ERR,
+				return new POP3Response(POP3Response.Type.ERR,
 						"command can only be used during " + State.TRANSACTION);
 			}
-			Message selectedMessage2 = getMessageSelection(args[0]);
+			POP3Message selectedMessage2 = getMessageSelection(args[0]);
 			if (selectedMessage2 == null) {
-				return new Response(Response.Type.ERR, "no such message");
+				return new POP3Response(POP3Response.Type.ERR, "no such message");
 			}
 			if (selectedMessage2.isDeleted()) {
-				return new Response(Response.Type.ERR,
+				return new POP3Response(POP3Response.Type.ERR,
 						"message already deleted");
 			}
 			client.deleteMessage(Integer.parseInt(selectedMessage2.getUniqueId()));
-			return new Response(Response.Type.OK, "marked message for delete");
+			return new POP3Response(POP3Response.Type.OK, "marked message for delete");
 
 		case RSET:
 			if (!inState(State.TRANSACTION)) {
-				return new Response(Response.Type.ERR,
+				return new POP3Response(POP3Response.Type.ERR,
 						"command can only be used during " + State.TRANSACTION);
 			}
 			
 			int msgCount = 0;
 			int octCount = 0;
-			return new Response(Response.Type.OK, "maildrop has " + msgCount
+			return new POP3Response(POP3Response.Type.OK, "maildrop has " + msgCount
 					+ " (" + octCount + " octets)");
 
 		case TOP:
 			if (!inState(State.TRANSACTION)) {
-				return new Response(Response.Type.ERR,
+				return new POP3Response(POP3Response.Type.ERR,
 						"command can only be used during " + State.TRANSACTION);
 			}
 			if (!hasArguments || args.length != 2) {
-				return new Response(Response.Type.ERR, "not enough arguments");
+				return new POP3Response(POP3Response.Type.ERR, "not enough arguments");
 			}
-			Message selectedMessageTop = getMessageSelection(args[0]);
+			POP3Message selectedMessageTop = getMessageSelection(args[0]);
 			if (selectedMessageTop != null && !selectedMessageTop.isDeleted()) {
 				int numLines;
 				try {
 					numLines = Integer.parseInt(args[1]);
 				} catch (NumberFormatException nfe) {
-					return new Response(Response.Type.ERR,
+					return new POP3Response(POP3Response.Type.ERR,
 							"number format error on number of lines");
 				}
-				Response topResponse = new Response(Response.Type.OK);
+				POP3Response topResponse = new POP3Response(POP3Response.Type.OK);
 				topResponse.appendExtraLine(selectedMessageTop.getHeader());
 				String[] lines = selectedMessageTop.getBodyLines(numLines);
 				for (String line : lines) {
@@ -395,10 +392,10 @@ public class POP3CommandInterpreter{
 				}
 				return topResponse.appendTerminationLine();
 			}
-			return new Response(Response.Type.ERR, "no such message");
+			return new POP3Response(POP3Response.Type.ERR, "no such message");
 
 		case CAPA:
-			Response capaResponse = new Response(Response.Type.OK,
+			POP3Response capaResponse = new POP3Response(POP3Response.Type.OK,
 					"capability list follows");
 			capaResponse.appendExtraLine("USER");
 			capaResponse.appendExtraLine("UIDL");
@@ -418,10 +415,10 @@ public class POP3CommandInterpreter{
 
 				String stat = 0 == 0 ? "maildrop empty" : 0
 						+ " messages left";
-				return new Response(Response.Type.OK,
+				return new POP3Response(POP3Response.Type.OK,
 						"POP3 server logging out (" + stat + ")");
 			}
-			return new Response(Response.Type.OK, "POP3 server logging out");
+			return new POP3Response(POP3Response.Type.OK, "POP3 server logging out");
 
 		}
 		return null;
@@ -436,12 +433,12 @@ public class POP3CommandInterpreter{
 		return true;
 	}
 
-	private Message getMessageSelection(String arg) {
+	private POP3Message getMessageSelection(String arg) {
 		List<com.bl4ckbird.ebitm.bitmessage.entities.Message> savedMessages2 = client.getAllMessages();
-                         ArrayList<Message> savedMessages0 = new ArrayList<>();
+                         ArrayList<POP3Message> savedMessages0 = new ArrayList<>();
                         for(int i = 0; i<savedMessages2.size(); i++){
                            com.bl4ckbird.ebitm.bitmessage.entities.Message m = savedMessages2.get(i);
-                           Message newm = new Message(i + "",m.getFromAddress(),m.getToAddress(),m.getSubject(),m.getMessage(),false);
+                           POP3Message newm = new POP3Message(i + "",m.getFromAddress(),m.getToAddress(),m.getSubject(),m.getMessage(),false);
                            savedMessages0.add(newm);
                            
                            
@@ -459,7 +456,7 @@ public class POP3CommandInterpreter{
 	}
    
 	public String getWelcomeResponse() {
-		return new Response(Response.Type.OK, "POP3 server ready").buildOutput();
+		return new POP3Response(POP3Response.Type.OK, "POP3 server ready").buildOutput();
 	}
 
 	public boolean isHoldingLock() {

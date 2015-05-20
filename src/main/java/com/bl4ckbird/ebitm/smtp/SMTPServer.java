@@ -30,7 +30,6 @@ package com.bl4ckbird.ebitm.smtp;
  */
 
 
-import com.bl4ckbird.ebitm.pop.Server;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.logging.Level;

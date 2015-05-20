@@ -34,7 +34,7 @@ import java.net.Socket;
  *
  * @author Lukas Kaupp 'Bl4ckM' <lukas.kaupp@stud.h-da.de>
  */
-public class ClientThread implements Runnable{
+public class POP3ClientThread implements Runnable{
     
     
         
@@ -44,11 +44,11 @@ public class ClientThread implements Runnable{
     private PrintWriter output;
     private POP3CommandInterpreter interpreter;
     
-    public ClientThread(Socket s) throws IOException{
+    public POP3ClientThread(Socket s) throws IOException{
         connection = s;
         input = new BufferedReader(new InputStreamReader(s.getInputStream()));
         output = new PrintWriter(new OutputStreamWriter(s.getOutputStream()));
-        if(this instanceof POPClient){
+        if(this instanceof POP3Client){
             interpreter = new POP3CommandInterpreter();
         }
         

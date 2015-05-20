@@ -27,7 +27,7 @@ package com.bl4ckbird.ebitm.pop;
  * @author Matthew Herod, https://github.com/mherod/pop3server
  * 
  */
-public class Response {
+public class POP3Response {
 
 	public static final char TERM = 46;
 
@@ -43,30 +43,30 @@ public class Response {
 		OK, ERR
 	}
 
-	public Response(Type type) {
+	public POP3Response(Type type) {
 		setResponseType(type);
 	}
 
-	public Response(Type type, String response) {
+	public POP3Response(Type type, String response) {
 		setResponseType(type).setResponse(response);
 	}
 
-	public Response setResponseType(Type type) {
+	public POP3Response setResponseType(Type type) {
 		this.type = type;
 		return this;
 	}
 
-	public Response setResponse(String response) {
+	public POP3Response setResponse(String response) {
 		this.response = response;
 		return this;
 	}
 
-	public Response setTag(String tag) {
+	public POP3Response setTag(String tag) {
 		this.tag = tag;
 		return this;
 	}
 
-	public Response appendExtraLine(String line) {
+	public POP3Response appendExtraLine(String line) {
 		if (extra == null) {
 			extra = "";
 		}
@@ -74,7 +74,7 @@ public class Response {
 		return this;
 	}
 
-	public Response appendTerminationLine() {
+	public POP3Response appendTerminationLine() {
 		if (extra == null) {
 			extra = "";
 		}

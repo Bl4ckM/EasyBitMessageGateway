@@ -34,30 +34,44 @@ import org.apache.commons.codec.binary.Base64;
  * @author Lukas Kaupp 'Bl4ckM' <lukas.kaupp@stud.h-da.de>
  */
 public class Message {
+
+
+
     @Getter
     @Setter
-    private String msgid = "";
+    private String msgid;
     @Getter
     @Setter
-    private String toAddress= "";
+    private String toAddress;
     @Getter
     @Setter
-    private String fromAddress= "";
-    @Getter
-    private String subject= "";
+    private String fromAddress;
+    @Setter
+    private String subject;
     
     @Setter
-    private String message= "";
+    private String message;
     
     @Getter
     @Setter
-    private String encodingType= "";
+    private String encodingType;
     @Getter
     @Setter
-    private String receivedTime= "";
+    private String receivedTime;
     @Getter
     @Setter
-    private String read= "";
+    private String read;
+
+    Message(){
+        msgid = "";
+        toAddress = "";
+        fromAddress = "";
+        subject = "";
+        message = "";
+        encodingType = "";
+        receivedTime = "";
+        read = "";
+    }
     
         public String getMessage(){
         String decmsg = "";

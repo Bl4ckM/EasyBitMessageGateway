@@ -33,7 +33,7 @@ package com.bl4ckbird.ebitm.pop;
  * @author Lukas Kaupp 'Bl4ckM' <lukas.kaupp@stud.h-da.de>
  */
 
-public class Message {
+public class POP3Message {
 
 	private String uniqueId;
 	private String header;
@@ -45,7 +45,7 @@ public class Message {
 
 	private boolean deletePending = false;
 
-	public Message(String uniqueId, String from, String to, String subject, String body, boolean deleted) {
+	public POP3Message(String uniqueId, String from, String to, String subject, String body, boolean deleted) {
                 this.header = "";
                 this.header += "Received: from luckyluke (www.007guard.com [127.0.0.1])\r\n" +
 "by luckyluke.fritz.box\r\n" +
