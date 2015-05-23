@@ -23,21 +23,19 @@
  */
 package com.bl4ckbird.ebitm.smtp;
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 
 
 import com.bl4ckbird.ebitm.bitmessage.BitMessageClient;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+
+import java.io.*;
 import java.net.MalformedURLException;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.subethamail.smtp.TooMuchDataException;
 import org.subethamail.smtp.helper.SimpleMessageListener;
 
@@ -46,6 +44,9 @@ import org.subethamail.smtp.helper.SimpleMessageListener;
  * @author Lukas Kaupp 'Bl4ckM' <lukas.kaupp@stud.h-da.de>
  */
 public class SMTPClient implements SimpleMessageListener {
+
+
+
     private BitMessageClient client;
     public SMTPClient(){
         try {
@@ -62,13 +63,57 @@ public class SMTPClient implements SimpleMessageListener {
 
     @Override
     public void deliver(String from, String to, InputStream data) throws TooMuchDataException, IOException {
-       
-        System.out.println("from: " + from);
-        System.out.println("to:" + to);
+
+
+
+        from = from.substring(0,from.indexOf("@"));
+        to = to.substring(0,to.indexOf("@"));
+
+
+
         BufferedReader br = new BufferedReader(new InputStreamReader(data));
-        String line = "";
-        while((line = br.readLine() ) != null){
-        System.out.println("data: " + line);
+        String line ="";
+        String body = "";
+        String doublespace = "";
+        String subject = "";
+
+        Boolean bodyend = false;
+        Boolean bodybegin = false;
+        while((line = br.readLine()) != null){
+             Matcher subjectptrn = Pattern.compile("^Subject: (.*)$").matcher(line);
+             Matcher bodyptrn = Pattern.compile("^Content-Transfer-Encoding: (.*)$").matcher(line);
+            if(subjectptrn.matches())
+                subject = subjectptrn.group(1);
+
+
+
+
+            if(bodybegin){
+
+                   body += line + "\r\n";
+                   if(line.equals("")) {
+                       if (bodyend)
+                           break;
+
+                       bodyend = true;
+                   }else
+                       bodyend = false;
+
+
+
+            }
+
+            if(bodyptrn.matches())
+                bodybegin = true;
+
+
+        }
+        client.sendMessage(from, to, subject, body);
+
+        BufferedReader br2 = new BufferedReader(new InputStreamReader(data));
+        String line2 = "";
+        while((line2 = br.readLine() ) != null){
+        System.out.println("data: " + line2);
         }
     }
     

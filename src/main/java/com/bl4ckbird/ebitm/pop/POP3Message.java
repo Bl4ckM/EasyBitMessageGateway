@@ -23,6 +23,9 @@
  */
 package com.bl4ckbird.ebitm.pop;
 
+import java.io.*;
+import java.util.Properties;
+
 /**
  * Message
  * 
@@ -46,17 +49,28 @@ public class POP3Message {
 	private boolean deletePending = false;
 
 	public POP3Message(String uniqueId, String from, String to, String subject, String body, boolean deleted) {
-                this.header = "";
+
+        Properties prop = new Properties();
+        try {
+            InputStream fr = this.getClass().getResourceAsStream("/ebitg.properties");
+            prop.load(fr);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        String ending = (String)prop.get("mail.ending");
+        this.header = "";
                 this.header += "Received: from luckyluke (www.007guard.com [127.0.0.1])\r\n" +
 "by luckyluke.fritz.box\r\n" +
 "with SMTP (SubEthaSMTP 3.1.7) id I9SL2W1C\r\n" +
-"for <"+to+"@bla.com>;\r\n" +
+"for <"+to+ ending+">;\r\n" +
 "Sun, 17 May 2015 16:54:14 +0200 (CEST)\r\n";
                 this.header += "Date: Fri, 15 May 2015 17:20:44 +0200\r\n";
                 this.header += "Subject: " + subject + "\r\n" ;
                 this.header += "Message-ID: " +uniqueId +"\r\n";
-                this.header += "From: " +from + " <" + from +"@bla.com>" +"\r\n";
-                this.header += "To: " +to + " <" + to +"@bla.com>" +"\r\n";
+                this.header += "From: " +from + " <" + from + ending +">" +"\r\n";
+                this.header += "To: " +to + " <" + to + ending +">" +"\r\n";
                 this.header += "MIME-Version: 1.0\r\n";
                 this.header += "Content-Type: text/plain; charset=UTF-8\r\n\r\n";
             

@@ -37,7 +37,7 @@ import java.util.logging.Logger;
 public class POP3Server extends Thread{
     private int PORT;
     private ServerSocket server;
-    private ArrayList<POP3ClientThread> clients;
+    private ArrayList<POP3Client> clients;
     
     public POP3Server(){
         if(this instanceof POP3Server){
@@ -57,7 +57,7 @@ public class POP3Server extends Thread{
                 
                 
                 Socket clientcon = server.accept();
-                POP3ClientThread client = null;
+                POP3Client client = null;
                 
                 if(this instanceof POP3Server){
                     client = new POP3Client(clientcon);

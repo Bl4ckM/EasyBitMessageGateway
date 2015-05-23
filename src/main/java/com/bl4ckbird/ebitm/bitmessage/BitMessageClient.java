@@ -32,6 +32,8 @@ import java.net.URL;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.apache.ws.commons.util.Base64;
 import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
@@ -103,7 +105,7 @@ public class BitMessageClient {
     }
     
     public Boolean sendMessage(String from, String to, String subject, String message){
-         Object[] params = new Object[]{from,to,subject,message};
+         Object[] params = new Object[]{from,to, Base64.encode(subject.getBytes()), Base64.encode(message.getBytes())};
         try {
             String result = (String) client.execute("sendMessage", params);
           
